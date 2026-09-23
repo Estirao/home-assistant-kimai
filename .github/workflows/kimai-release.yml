@@ -1,1 +1,202 @@
+name: Kimai - detectar y publicar
 
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * *"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/kimai-release.yml"
+      - "scripts/kimai_release.py"
+      - "scripts/test_kimai_release.py"
+      - "scripts/test_wrapper.py"
+      - "scripts/smoke-test.sh"
+      - "kimai/Dockerfile"
+      - "kimai/run.sh"
+      - "kimai/config.yaml"
+
+# Only one publisher runs at a time. Never interrupt a publication halfway.
+concurrency:
+  group: kimai-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    name: Detectar version estable
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.detect.outputs.version }}
+      upstream_tag: ${{ steps.detect.outputs.upstream_tag }}
+      build: ${{ steps.detect.outputs.build }}
+      publish: ${{ steps.detect.outputs.publish }}
+      source_sha: ${{ steps.source.outputs.sha }}
+      candidate: ${{ steps.source.outputs.candidate }}
+      registry_prefix: ${{ steps.detect.outputs.registry_prefix }}
+      image: ${{ steps.detect.outputs.image }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Registrar el codigo que se va a construir
+        id: source
+        shell: bash
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "candidate=ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - name: Comprobar sintaxis de los scripts
+        run: |
+          bash -n kimai/run.sh
+          bash -n scripts/smoke-test.sh
+          python3 -m py_compile scripts/kimai_release.py
+      - name: Comprobar el detector
+        run: python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Consultar Kimai y el estado de nuestra publicacion
+        id: detect
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/kimai_release.py detect
+
+  build:
+    name: Construir y probar ${{ matrix.arch }}
+    needs: detect
+    if: needs.detect.outputs.build == 'true'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            os: ubuntu-24.04
+          - arch: aarch64
+            os: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.detect.outputs.source_sha }}
+      - name: Comprobar el script de arranque
+        run: bash -n kimai/run.sh
+      - name: Construir imagen candidata, todavia no anunciada a Home Assistant
+        id: image
+        uses: home-assistant/builder/actions/build-image@2026.06.0
+        with:
+          arch: ${{ matrix.arch }}
+          context: ./kimai
+          image: ${{ needs.detect.outputs.registry_prefix }}/${{ matrix.arch }}-kimai-ha
+          image-tags: ${{ needs.detect.outputs.candidate }}
+          version: ${{ needs.detect.outputs.version }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          container-registry-username: ${{ github.actor }}
+          push: "true"
+          cosign: "false"
+          labels: |
+            io.hass.type=app
+      - name: Probar arranque, MariaDB y recreacion del contenedor
+        env:
+          TEST_IMAGE: ${{ needs.detect.outputs.registry_prefix }}/${{ matrix.arch }}-kimai-ha@${{ steps.image.outputs.digest }}
+        run: bash scripts/smoke-test.sh "$TEST_IMAGE"
+
+  publish:
+    name: Publicar imagen, changelog y release
+    needs: [detect, build]
+    if: >-
+      always() &&
+      needs.detect.result == 'success' &&
+      needs.detect.outputs.publish == 'true' &&
+      (needs.build.result == 'success' || needs.build.result == 'skipped')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      packages: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TARGET_VERSION: ${{ needs.detect.outputs.version }}
+      UPSTREAM_TAG: ${{ needs.detect.outputs.upstream_tag }}
+      SOURCE_SHA: ${{ needs.detect.outputs.source_sha }}
+      IMAGE: ${{ needs.detect.outputs.image }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.detect.outputs.source_sha }}
+          fetch-depth: 0
+      - name: Evitar publicar sobre cambios hechos durante la compilacion
+        shell: bash
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$SOURCE_SHA" ]; then
+            echo "::error::main ha cambiado. Ejecuta de nuevo el workflow para construir el codigo nuevo."
+            exit 1
+          fi
+      - name: Preparar archivos y descargar el icono oficial
+        run: python3 scripts/kimai_release.py prepare
+      - name: Publicar imagen multi-arquitectura solo tras superar ambas pruebas
+        if: needs.detect.outputs.build == 'true'
+        uses: home-assistant/builder/actions/publish-multi-arch-manifest@2026.06.0
+        with:
+          architectures: '["amd64", "aarch64"]'
+          registry-prefix: ${{ needs.detect.outputs.registry_prefix }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          container-registry-username: ${{ github.actor }}
+          image-name: kimai-ha
+          image-tags: |
+            ${{ needs.detect.outputs.candidate }}
+            ${{ needs.detect.outputs.version }}
+          cosign: "false"
+      - name: Autenticacion para verificar la imagen publicada
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v4
+      - name: Verificar la etiqueta final antes de anunciarla
+        shell: bash
+        run: |
+          docker buildx imagetools inspect "$IMAGE:$TARGET_VERSION" --raw > /tmp/kimai-manifest.json
+          python3 scripts/kimai_release.py verify-manifest /tmp/kimai-manifest.json
+      - name: Actualizar config.yaml, changelog e imagenes en main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- kimai/config.yaml kimai/CHANGELOG.md kimai/icon.png kimai/logo.png kimai/BRANDING.md kimai/release.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(kimai): publish ${TARGET_VERSION} [skip ci]"
+            git push origin HEAD:main
+          fi
+      - name: Crear la release de GitHub sin duplicarla
+        run: python3 scripts/kimai_release.py release
+
+  keepalive:
+    name: Mantener activo el chequeo programado
+    needs: detect
+    if: needs.detect.outputs.publish == 'false'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Crear un commit tecnico solo tras 40 dias sin commits
+        shell: bash
+        run: |
+          last_commit=$(git log -1 --format=%ct)
+          age=$(( $(date +%s) - last_commit ))
+          if [ "$age" -ge 3456000 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "chore: keep scheduled Kimai checks active [skip ci]"
+            git push origin HEAD:main
+          fi
