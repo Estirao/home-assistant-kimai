@@ -1,0 +1,36 @@
+configuration:
+  database_host:
+    name: "Servidor de la base de datos"
+    description: "Nombre DNS interno de MariaDB. Por defecto: core-mariadb. Sin protocolo ni puerto."
+  database_port:
+    name: "Puerto de MariaDB"
+    description: "Puerto interno, normalmente 3306. No es necesario exponerlo a Internet."
+  database_name:
+    name: "Base de datos"
+    description: "Base de datos exclusiva de Kimai creada previamente en MariaDB."
+  database_user:
+    name: "Usuario de MariaDB"
+    description: "Usuario con permisos sobre la base de datos de Kimai."
+  database_password:
+    name: "Clave de MariaDB"
+    description: "Clave real del usuario de Kimai. No subirla a GitHub."
+  database_version:
+    name: "Version del servidor SQL"
+    description: "auto detecta la version real con Doctrine. Se puede introducir una version explicita para diagnostico."
+  admin_email:
+    name: "Correo del administrador inicial"
+    description: "Correo del administrador que se crea cuando todavia no existe."
+  admin_password:
+    name: "Clave del administrador inicial"
+    description: "No sirve para restablecer la clave de un administrador existente."
+  app_secret:
+    name: "Secreto de la aplicacion"
+    description: "Cadena aleatoria de al menos 32 caracteres. Generar con openssl rand -hex 32 y conservar en las migraciones."
+  trusted_hosts:
+    name: "Nombres o IP de acceso permitidos"
+    description: "Expresion regular del host usado en el navegador; sin http:// ni puerto. Anadir la IP o dominio propio. Un host no permitido produce HTTP 400."
+  timezone:
+    name: "Zona horaria"
+    description: "Valor predeterminado Europe/Madrid. Usa una zona IANA, no un desplazamiento fijo UTC."
+network:
+  8001/tcp: "Interfaz web HTTP de Kimai"

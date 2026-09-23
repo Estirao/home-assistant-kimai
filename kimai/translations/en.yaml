@@ -1,0 +1,36 @@
+configuration:
+  database_host:
+    name: "Database host"
+    description: "Internal MariaDB hostname, normally core-mariadb. No scheme or port."
+  database_port:
+    name: "Database port"
+    description: "Internal SQL port, normally 3306."
+  database_name:
+    name: "Database name"
+    description: "A dedicated database created in MariaDB for Kimai."
+  database_user:
+    name: "Database user"
+    description: "A MariaDB user with permissions on the Kimai database."
+  database_password:
+    name: "Database password"
+    description: "The real MariaDB password. Never commit it to GitHub."
+  database_version:
+    name: "Database version"
+    description: "auto lets Doctrine detect the real database version."
+  admin_email:
+    name: "Initial admin email"
+    description: "Email of the initial administrator, created only if missing."
+  admin_password:
+    name: "Initial admin password"
+    description: "Does not reset the password of an existing administrator."
+  app_secret:
+    name: "Application secret"
+    description: "At least 32 random characters. Generate with openssl rand -hex 32; keep unchanged when migrating."
+  trusted_hosts:
+    name: "Allowed access hosts"
+    description: "Host regex without scheme or port. Add your own IP or domain. A disallowed host returns HTTP 400."
+  timezone:
+    name: "Timezone"
+    description: "Defaults to Europe/Madrid. Use an IANA timezone, not a fixed UTC offset."
+network:
+  8001/tcp: "Kimai HTTP web interface"

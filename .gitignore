@@ -1,0 +1,13 @@
+.release-work/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+options.json
+*.sql
+*.sql.gz
+*.tar
+*.tar.gz
+*.zip
+.DS_Store
+Thumbs.db

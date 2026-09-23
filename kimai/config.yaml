@@ -1,0 +1,44 @@
+name: "Kimai"
+version: "2.67.0"
+slug: "kimai"
+description: "Registro de tiempos, clientes y proyectos con Kimai"
+url: "https://github.com/Estirao/home-assistant-kimai"
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+init: false
+image: "ghcr.io/estirao/kimai-ha"
+webui: "http://[HOST]:[PORT:8001]"
+ports:
+  8001/tcp: 8001
+ports_description:
+  8001/tcp: "Interfaz web de Kimai (HTTP)"
+services:
+  - mysql:need
+backup: cold
+options:
+  database_host: "core-mariadb"
+  database_port: 3306
+  database_name: "kimai"
+  database_user: "kimai"
+  database_password: "CHANGE_ME_DB"
+  database_version: "auto"
+  admin_email: "admin@example.com"
+  admin_password: "CHANGE_ME_ADMIN"
+  app_secret: "CHANGE_ME_LONG_RANDOM_SECRET"
+  trusted_hosts: '^(homeassistant\.local|localhost|127\.0\.0\.1)$'
+  timezone: "Europe/Madrid"
+schema:
+  database_host: str
+  database_port: port
+  database_name: str
+  database_user: str
+  database_password: password
+  database_version: str
+  admin_email: email
+  admin_password: password
+  app_secret: password
+  trusted_hosts: str
+  timezone: str
