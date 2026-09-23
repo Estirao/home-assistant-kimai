@@ -63,12 +63,6 @@ After installation, configure at least:
 - Trusted hosts
 - Time zone
 
-For Spain, the recommended time zone is:
-
-```text
-Europe/Madrid
-```
-
 ## Access
 
 By default, Kimai is exposed through:
