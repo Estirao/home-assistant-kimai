@@ -50,6 +50,21 @@ CONFIG_VERSION = re.compile(
 )
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
+# GitHub user/team mentions are stripped from copied upstream release notes so
+# publishing this downstream package never @-mentions or notifies upstream
+# contributors. Email addresses and URL paths containing /@ are left alone.
+GITHUB_MENTION = re.compile(
+    r"(?<![A-Za-z0-9._%+/\-])@([A-Za-z0-9][A-Za-z0-9-]{0,38}(?:/[A-Za-z0-9][A-Za-z0-9-]{0,38})?)"
+)
+
+
+def sanitize_mentions(text: str) -> str:
+    return GITHUB_MENTION.sub(lambda match: match.group(1), text)
+
+
+def contains_mentions(text: str) -> bool:
+    return GITHUB_MENTION.search(text) is not None
+
 
 def normalized_version(value: str) -> str:
     match = VERSION.fullmatch(value)
@@ -168,6 +183,9 @@ def detect() -> None:
     changelog = (APP / "CHANGELOG.md").read_text(encoding="utf-8") if (APP / "CHANGELOG.md").exists() else ""
     missing = any(not (APP / name).is_file() for name in ("icon.png", "logo.png", "BRANDING.md"))
     missing = missing or not re.search(rf"(?m)^## {re.escape(target)}(?:\s|$)", changelog)
+    # Also republish metadata when an existing downstream release still contains
+    # actionable @mentions copied from Kimai's upstream notes.
+    missing = missing or bool(existing and contains_mentions(str(existing.get("body") or "")))
     plan = compute_plan(current, target, released, recorded, missing)
     write_outputs({"version": target, "upstream_tag": latest["tag_name"],
                    "registry_prefix": REGISTRY_PREFIX, "image": IMAGE, **plan})
@@ -236,7 +254,8 @@ def release_notes(release: dict[str, Any], previous: str) -> str:
     text += "Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. "
     text += "This is not a test of migration from your existing database or of installed plugins.\n\n"
     text += "## Official Kimai release notes\n\n"
-    text += (release.get("body") or "See the official release linked above.").strip() + "\n"
+    upstream_body = (release.get("body") or "See the official release linked above.").strip()
+    text += sanitize_mentions(upstream_body) + "\n"
     return text
 
 
@@ -263,6 +282,12 @@ def prepare() -> None:
     (APP / "config.yaml").write_text(replace_version(text, target), encoding="utf-8")
     changelog_path = APP / "CHANGELOG.md"
     old = changelog_path.read_text(encoding="utf-8") if changelog_path.exists() else ""
+    # Historical copied notes are also cleaned so the repository itself does not
+    # retain actionable GitHub mentions from upstream release text.
+    sanitized_old = sanitize_mentions(old)
+    if sanitized_old != old:
+        changelog_path.write_text(sanitized_old, encoding="utf-8")
+        old = sanitized_old
     if not re.search(rf"(?m)^## {re.escape(target)}(?:\s|$)", old):
         # Keep version headings at level 2; demote upstream headings.
         details = re.sub(r"(?m)^(#{1,5})(?= )", lambda match: "##" + match.group(1), notes)
@@ -284,17 +309,30 @@ def verify_manifest(path: Path) -> None:
 def create_release() -> None:
     target = normalized_version(os.environ["TARGET_VERSION"])
     existing = own_release(target)
+    body = (ROOT / ".release-work" / "notes.md").read_text(encoding="utf-8")
     if existing:
         if existing.get("draft") or existing.get("prerelease"):
             raise ValueError(f"v{target} already exists as draft/prerelease. Review it manually; it was not overwritten.")
-        print(f"Release v{target} already exists; nothing to duplicate or overwrite.")
+        # Existing releases are updated only when their generated body differs.
+        # This lets a workflow update remove old @mentions without duplicating the
+        # release or moving its tag.
+        if str(existing.get("body") or "").strip() != body.strip():
+            updated = api(f"repos/{REPO}/releases/{existing['id']}", method="PATCH", payload={
+                "name": f"Kimai {target} - Home Assistant",
+                "body": body,
+                "draft": False,
+                "prerelease": False,
+                "make_latest": "true",
+            })
+            print(f"Updated {updated['html_url']}")
+        else:
+            print(f"Release v{target} already exists and is already sanitized.")
         return
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     # Refuse to silently attach a release to a different pre-existing Git tag.
     tag_ref = api(f"repos/{REPO}/git/ref/tags/v{target}", allow_404=True)
     if tag_ref is not None and (tag_ref["object"]["type"] != "commit" or tag_ref["object"]["sha"] != sha):
         raise ValueError(f"Tag v{target} already points elsewhere. Review it manually; it was not moved.")
-    body = (ROOT / ".release-work" / "notes.md").read_text(encoding="utf-8")
     created = api(f"repos/{REPO}/releases", method="POST", payload={
         "tag_name": f"v{target}", "target_commitish": sha,
         "name": f"Kimai {target} - Home Assistant", "body": body,

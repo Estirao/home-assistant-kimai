@@ -6,8 +6,8 @@ import tempfile
 import unittest
 
 from kimai_release import (
-    compute_plan, current_version, normalized_version, png_size,
-    release_notes, replace_version, stable_version, verify_manifest, version_key,
+    compute_plan, contains_mentions, current_version, normalized_version, png_size,
+    release_notes, replace_version, sanitize_mentions, stable_version, verify_manifest, version_key,
 )
 
 
@@ -80,6 +80,28 @@ class VersionTests(unittest.TestCase):
         self.assertIn("Major-version change", notes)
         self.assertIn("Example upstream note", notes)
         self.assertIn("not a test of migration", notes)
+
+    def test_upstream_mentions_are_neutralized(self):
+        release = {
+            "tag_name": "2.68.0",
+            "html_url": "https://github.com/kimai/kimai/releases/tag/2.68.0",
+            "body": "Thanks @kevinpapst, @org/team and [@helper](https://github.com/helper).",
+        }
+        notes = release_notes(release, "2.67.0")
+        self.assertNotIn("@kevinpapst", notes)
+        self.assertNotIn("@org/team", notes)
+        self.assertNotIn("@helper", notes)
+        self.assertIn("kevinpapst", notes)
+        self.assertIn("org/team", notes)
+        self.assertIn("[helper]", notes)
+        self.assertFalse(contains_mentions(notes))
+
+    def test_sanitizer_does_not_break_emails_or_url_paths(self):
+        text = "Contact maintainer@example.com and see https://example.com/@asset; thanks @person."
+        cleaned = sanitize_mentions(text)
+        self.assertIn("maintainer@example.com", cleaned)
+        self.assertIn("https://example.com/@asset", cleaned)
+        self.assertIn("thanks person.", cleaned)
 
     def test_non_png_is_rejected(self):
         with self.assertRaises(ValueError):
