@@ -1,5 +1,46 @@
 # Changelog
 
+## 2.69.0
+
+Kimai **2.69.0** packaged for Home Assistant OS.
+
+Image: `ghcr.io/estirao/kimai-ha:2.69.0`. Architectures: `amd64` and `aarch64`.
+
+[Official Kimai release](https://github.com/kimai/kimai/releases/tag/2.69.0).
+
+Updating the repository does not upgrade Home Assistant. Keep automatic updates disabled.
+
+Back up Kimai and MariaDB together before updating. A container downgrade does not reverse database migrations.
+
+Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. This is not a test of migration from your existing database or of installed plugins.
+
+#### Official Kimai release notes
+
+**Compatible with PHP 8.2 to 8.5**
+
+#### Features
+
+- Reset user security signature on change of relevant fields (#6230)
+- Allow to switch LDAP/SAML accounts to internal (#6229)
+- New choice form type that supports re-ordering and that keeps the saved column order when editing (#6228)
+  - Export template column
+  - Activity dropdown title pattern
+  - Project dropdown title pattern
+  - Customer dropdown title pattern
+- Login links should always use 2FA (#6228)
+- Translations update from Hosted Weblate (#6225)
+
+#### Bugfixes 
+
+- The "Project details" report was not visible for teamleads (#6228)
+- Missing "Project details" route did not highlight report menu (#6228)
+- Use `DEFAULT_URI` in login-link command to fix "Untrusted Host" (#6228)
+
+
+You can read more about all security reports [here](https://www.kimai.org/documentation/bughunter.html#published-vulnerabilities) or grab this [RSS feed](https://www.kimai.org/security.xml) to get notified about new published advisories.
+
+Involved in this release: kevinpapst, AgenteGabrielofc, oersen, persianboy, yarons and z0ranf
+
 ## 2.68.0
 
 Kimai **2.68.0** packaged for Home Assistant OS.
