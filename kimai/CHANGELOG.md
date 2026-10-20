@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.70.0
+
+Kimai **2.70.0** packaged for Home Assistant OS.
+
+Image: `ghcr.io/estirao/kimai-ha:2.70.0`. Architectures: `amd64` and `aarch64`.
+
+[Official Kimai release](https://github.com/kimai/kimai/releases/tag/2.70.0).
+
+Updating the repository does not upgrade Home Assistant. Keep automatic updates disabled.
+
+Back up Kimai and MariaDB together before updating. A container downgrade does not reverse database migrations.
+
+Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. This is not a test of migration from your existing database or of installed plugins.
+
+#### Official Kimai release notes
+
+**Compatible with PHP 8.2 to 8.5**
+
+#### Features
+
+- Password strength configuration (#6242)
+- CSS classes for customization (working contract screen) (#6240)
+- Translations update from Hosted Weblate (#6235) (#6253)
+
+#### 🚨 Security
+
+- Prevent internal preferences from being updated via API - thanks sharma19d (#6240)
+- Make sure that remembered users cannot skip the password-change wizard - thanks sharma19d (#6240)
+- Update security-signature on password-reset and end all active sessions - thanks Tan-JunWei (#6240)
+- Added EnvVarProcessor to parse TRUSTED\_HOSTS - thanks dylanzonix (#6246)
+- Only the logged-in user can activate 2fa - thanks AzureADTrent (#6240)
+
+You can read more about all security reports [here](https://www.kimai.org/documentation/bughunter.html#published-vulnerabilities) or grab this [RSS feed](https://www.kimai.org/security.xml) to get notified about new published advisories.
+
+Involved in this release: kevinpapst, AgenteGabrielofc, alhyei6si, Anastasija FG, Andrei Stepanov, arifpedia, aspopovic, Michal Várady, oersen,Ph1l0s64, Watchman89
+
 ## 2.69.0
 
 Kimai **2.69.0** packaged for Home Assistant OS.
