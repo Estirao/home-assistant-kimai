@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.71.0
+
+Kimai **2.71.0** packaged for Home Assistant OS.
+
+Image: `ghcr.io/estirao/kimai-ha:2.71.0`. Architectures: `amd64` and `aarch64`.
+
+[Official Kimai release](https://github.com/kimai/kimai/releases/tag/2.71.0).
+
+Updating the repository does not upgrade Home Assistant. Keep automatic updates disabled.
+
+Back up Kimai and MariaDB together before updating. A container downgrade does not reverse database migrations.
+
+Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. This is not a test of migration from your existing database or of installed plugins.
+
+#### Official Kimai release notes
+
+**Compatible with PHP 8.2 to 8.5**
+
+#### Changes
+
+- Remove API password from user profile screen (#6277)
+- Deactivate API passwords (#6267) - thanks haxxordan
+
+#### Bugfixes
+
+- Check if API is allowed to set begin (#6275) - thanks Deniiz23
+- Use edit permission to check if times can be set via API (#6276) - thanks Deniiz23
+
+#### Maintenance
+
+- Convert user roles from deprecated Types::ARRAY to Types::JSON (#6278)
+- Translations update from Hosted Weblate (#6258)
+- Dependency updates (#6272)
+
+You can read more about all security reports [here](https://www.kimai.org/documentation/bughunter.html#published-vulnerabilities) or grab this [RSS feed](https://www.kimai.org/security.xml) to get notified about new published advisories.
+
+Involved in this release: kevinpapst, haxxordan, Deniiz23, Olaf Nielsen and yurisatori0312
+
 ## 2.70.2
 
 Kimai **2.70.2** packaged for Home Assistant OS.
