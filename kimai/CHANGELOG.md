@@ -1,5 +1,55 @@
 # Changelog
 
+## 2.72.0
+
+Kimai **2.72.0** packaged for Home Assistant OS.
+
+Image: `ghcr.io/estirao/kimai-ha:2.72.0`. Architectures: `amd64` and `aarch64`.
+
+[Official Kimai release](https://github.com/kimai/kimai/releases/tag/2.72.0).
+
+Updating the repository does not upgrade Home Assistant. Keep automatic updates disabled.
+
+Back up Kimai and MariaDB together before updating. A container downgrade does not reverse database migrations.
+
+Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. This is not a test of migration from your existing database or of installed plugins.
+
+#### Official Kimai release notes
+
+**Compatible with PHP 8.2 to 8.5**
+
+#### Features & Maintenance
+
+- Bump Docker to PHP 8.5, use custom ICU data to fix timezone issues in some countries (#6318)
+- Search invoice history by invoice number (#6287) - thanks Deniiz23 
+- Highlight unpaid invoices in listings
+- Run the search on Enter instead of saving the filter as default (invoice & export screen) (#6291) - thanks dgesteves 
+- Run `pnpm lint` during CI
+- Updated translations (#6292) (#6306)
+- Fix twig deprecations: missing default parameter in macros
+- Improved invoice overdue calculation (internal API bug, no visible changes)
+- Bumped frontend and composer packages
+
+#### Bugfixes
+
+- Keep the calendar month in the URL on reload (#6324) - thanks shu-chen-dot-ca 
+- Use correct TTL settings for "password reset" links
+- Reduce default TTL for "password reset" links to 0.5h
+- Use consistent currency aware monetary rounding half-up, mainly for invoices (#6317)
+- Memory safe export preview (#6295)
+- Do not fail on unpersisted entities in rate calculation (mass import via internal API)
+
+#### 🚨 Security
+
+- Disable login route if SAML is active and user disabled form login (#6311) - thanks mrtxmrtx
+- Validate custom-field values submitted via API (#6301) - thanks wleeaf and manus-pi
+- Fix locale route matching in global firewall - thanks petertornstrand 
+- Harden twig security policy - thanks manus-pi
+
+You can read more about all security reports [here](https://www.kimai.org/documentation/bughunter.html#published-vulnerabilities) or grab this [RSS feed](https://www.kimai.org/security.xml) to get notified about new published advisories.
+
+Also involved in this release: kevinpapst, weblate, Andrei Stepanov, aspopovic, Deniiz23, dgesteves, Gabriel, Phil, testecelular and Watchman89
+
 ## 2.71.0
 
 Kimai **2.71.0** packaged for Home Assistant OS.
