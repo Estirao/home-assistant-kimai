@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.72.1
+
+Kimai **2.72.1** packaged for Home Assistant OS.
+
+Image: `ghcr.io/estirao/kimai-ha:2.72.1`. Architectures: `amd64` and `aarch64`.
+
+[Official Kimai release](https://github.com/kimai/kimai/releases/tag/2.72.1).
+
+Updating the repository does not upgrade Home Assistant. Keep automatic updates disabled.
+
+Back up Kimai and MariaDB together before updating. A container downgrade does not reverse database migrations.
+
+Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. This is not a test of migration from your existing database or of installed plugins.
+
+#### Official Kimai release notes
+
+A new release to trigger new Docker images, after the latest CVEs were patched and the base images updated.
+
 ## 2.72.0
 
 Kimai **2.72.0** packaged for Home Assistant OS.
