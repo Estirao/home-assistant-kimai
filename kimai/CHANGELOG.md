@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.73.0
+
+Kimai **2.73.0** packaged for Home Assistant OS.
+
+Image: `ghcr.io/estirao/kimai-ha:2.73.0`. Architectures: `amd64` and `aarch64`.
+
+[Official Kimai release](https://github.com/kimai/kimai/releases/tag/2.73.0).
+
+Updating the repository does not upgrade Home Assistant. Keep automatic updates disabled.
+
+Back up Kimai and MariaDB together before updating. A container downgrade does not reverse database migrations.
+
+Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. This is not a test of migration from your existing database or of installed plugins.
+
+#### Official Kimai release notes
+
+**Compatible with PHP 8.2 to 8.5**
+
+#### Changes
+
+- Remove financial year setting, fix broken yearly reports (#6344)
+- Invoice: do not show footnote number if tax row was hidden (#6335)
+- Throw exception if LDAP is activated but dependency not installed (#6332)
+- Fix decimal duration rounding (#6254) - thanks shu-chen-dot-ca
+- Bump `phpoffice/phpspreadsheet` to v5 (#6335)
+- Translations update from Hosted Weblate (#6328)
+- Prevent managing the profiles of higher privileged users (#6350) - thanks HusseinTahaSEC 
+
+#### 🚨 Security
+
+- Do not include user-entity fields in supervisor API subresource (#6347) - thanks kats1123 
+- Prevent password login for SAML accounts (#6334) - thanks mrhackcz
+
+You can read more about all security reports [here](https://www.kimai.org/documentation/bughunter.html#published-vulnerabilities) or grab this [RSS feed](https://www.kimai.org/security.xml) to get notified about new published advisories.
+
+Involved in this release: kevinpapst, AlaxLima, flytothehighest, Massimo Pissarello, Peter Törnstrand and Webcapitalos Adminos
+
 ## 2.72.1
 
 Kimai **2.72.1** packaged for Home Assistant OS.
