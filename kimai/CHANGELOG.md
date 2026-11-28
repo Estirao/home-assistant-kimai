@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.74.0
+
+Kimai **2.74.0** packaged for Home Assistant OS.
+
+Image: `ghcr.io/estirao/kimai-ha:2.74.0`. Architectures: `amd64` and `aarch64`.
+
+[Official Kimai release](https://github.com/kimai/kimai/releases/tag/2.74.0).
+
+Updating the repository does not upgrade Home Assistant. Keep automatic updates disabled.
+
+Back up Kimai and MariaDB together before updating. A container downgrade does not reverse database migrations.
+
+Basic startup, fresh MariaDB initialization and app-container recreation were tested on both architectures. This is not a test of migration from your existing database or of installed plugins.
+
+#### Official Kimai release notes
+
+**Compatible with PHP 8.2 to 8.5**
+
+#### Changes
+
+- API pagination opt-in via parameter (#6363) - thanks jonas-mayer19
+- Allow to load work-contract statistics for many users at once (#6361)
+- Renamed activity/project/customer permission sections for clarity [see docs](https://www.kimai.org/documentation/permissions.html#permissions) (#6360)
+- Hidden customers can now be pre-selected through filter (#6340)
+- Make long page-action dropdowns scrollable (#6360)
+- Fix autocomplete on login forms (#6360) ([#274](https://github.com/kevinpapst/TablerBundle/issues/274))
+
+#### 🚨 Security
+
+- Bump dependencies 
+- Improve pre-selected item handling in toolbar forms (#6359) - thanks dragomir-am and joostgrunwald
+
+You can read more about all security reports [here](https://www.kimai.org/documentation/bughunter.html#published-vulnerabilities) or grab this [RSS feed](https://www.kimai.org/security.xml) to get notified about new published advisories.
+
+Involved in this release: kevinpapst and jonas-mayer19
+
 ## 2.73.0
 
 Kimai **2.73.0** packaged for Home Assistant OS.
